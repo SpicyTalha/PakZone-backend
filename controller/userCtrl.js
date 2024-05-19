@@ -26,31 +26,42 @@ const createUser = asyncHandler(async (req, res) => {
 
 const loginUserCtrl = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const findUser = await user.findOne({ email })
-    if (findUser) {
-        const isPasswordMatched = await findUser.isPasswordMatched(password);
-        if (isPasswordMatched) {
-            const refreshToken = await generateRefreshToken(findUser?._id);
-            const updateUser = await user.findByIdAndUpdate(findUser?._id, {
-                refreshToken: refreshToken}, 
-                {new: true});
-            res.cookie("refreshToken", refreshToken, {
-                httpOnly: true,
-                maxAge: 3*60*60*1000
-            })
-            res.status(200).json({
-                _id: findUser?._id,
-                firstname: findUser?.firstname,
-                lastname: findUser?.lastname,
-                email: findUser?.email,
-                mobile: findUser?.mobile,
-                token: generateToken(findUser?._id),    
-            })
-        }
-    } else {
+    const findUser = await user.findOne({ email });
+
+    if (!findUser) {
+        res.status(401);
         throw new Error('Invalid email or password');
     }
+
+    const isPasswordMatched = await findUser.isPasswordMatched(password);
+
+    if (!isPasswordMatched) {
+        res.status(401);
+        throw new Error('Invalid email or password');
+    }
+
+    const refreshToken = await generateRefreshToken(findUser._id);
+    const updateUser = await user.findByIdAndUpdate(
+        findUser._id,
+        { refreshToken: refreshToken },
+        { new: true }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 3 * 60 * 60 * 1000, // 3 hours
+    });
+
+    res.status(200).json({
+        _id: findUser._id,
+        firstname: findUser.firstname,
+        lastname: findUser.lastname,
+        email: findUser.email,
+        mobile: findUser.mobile,
+        token: generateToken(findUser._id),
+    });
 });
+
 
 //handle refresh token
 const handleRefreshToken = asyncHandler(async (req, res) =>{
