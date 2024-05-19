@@ -210,7 +210,7 @@ const forgotPasswordToken = asyncHandler(async (req, res) => {
     try{
         const token = await User.createPasswordResetToken();
         await User.save();
-        const resetURL = `Hello, ${User.firstname}, click on the link below to reset your password: <a href='https://localhost:4000/api/user/reset-password/${token}'>Reset Password</a>. The Link will expire in 10 minutes`;
+        const resetURL = `Hello, ${User.firstname}, click on the link below to reset your password: <a href='http://localhost:4000/api/user/reset-password/${token}'>Reset Password</a>. The Link will expire in 10 minutes`;
         const data = {
             to: email,
             text: "Meow",
@@ -235,10 +235,11 @@ const resetPassword = asyncHandler(async (req, res) => {
     if (!User){
         throw new Error("Token is invalid or has expired");
     }
-    user.password = password;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
+    User.password = password;
+    User.passwordResetToken = undefined;
+    User.passwordResetExpires = undefined;
     await User.save();
+    res.json(User)
 })
 
 module.exports = { createUser,
