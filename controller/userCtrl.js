@@ -26,8 +26,13 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
         const isPasswordMatched = await findUser.isPasswordMatched(password);
         if (isPasswordMatched) {
             res.status(200).json({ msg: 'Login successfully' });
-        } else {
-            res.status(401).json({ msg: 'Invalid email or password' });
+            res.json({
+                _id: findUser?._id,
+                firstname: findeUser?.firstname,
+                lastname: findUser?.lastname,
+                email: findUser?.email,
+                token: generateToken(findUser?._id),    
+            })
         }
     } else {
         throw new Error('Invalid email or password');

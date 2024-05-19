@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'); // Erase if already required
 const bcrypt = require('bcrypt');
-
+const dotenv = require('dotenv').config();
 // Declare the Schema of the Mongo model
 var userSchema = new mongoose.Schema({
     firstname:{
@@ -25,10 +25,14 @@ var userSchema = new mongoose.Schema({
         type:String,
         required:true,
     },
+    role:{
+        type:String,
+        default:"user",
+    }
 });
 
 userSchema.pre('save', async function(next){
-    const salt = await bcrypt.genSaltSync(process.env.SALT_ROUND);
+    const salt = await bcrypt.genSaltSync(10);
     this.password = await bcrypt.hash(this.password, salt);
 });
 
