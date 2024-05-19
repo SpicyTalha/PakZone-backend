@@ -157,4 +157,7 @@ const rating = asyncHandler(async (req, res) => {
     }
 })
 
-module.exports = {createProduct, getaProduct, getallProduct, updateProduct, deleteProduct, addToWishList, rating}
+const uploadImages = asyncHandler(async (req, res) => {
+    console.log(req.files)
+})
+module.exports = {createProduct, getaProduct, getallProduct, updateProduct, deleteProduct, addToWishList, rating, uploadImages}
