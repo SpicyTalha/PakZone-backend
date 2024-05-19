@@ -26,14 +26,14 @@ var blogSchema = new mongoose.Schema({
         type:Boolean,
         default:false
     },
-    likes:{
+    likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-    },
-    dislikes:{
+    }],
+    dislikes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-    },
+    }],
     image:{
         type:String,
         default:"https://images.pexels.com/photos/262508/pexels-photo-262508.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
