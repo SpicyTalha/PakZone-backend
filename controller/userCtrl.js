@@ -1,5 +1,6 @@
 const user = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
+const {generateToken} = require('../config/jwtToken');
 
 
 const createUser = asyncHandler(async (req, res) => {
@@ -25,12 +26,12 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
     if (findUser) {
         const isPasswordMatched = await findUser.isPasswordMatched(password);
         if (isPasswordMatched) {
-            res.status(200).json({ msg: 'Login successfully' });
-            res.json({
+            res.status(200).json({
                 _id: findUser?._id,
-                firstname: findeUser?.firstname,
+                firstname: findUser?.firstname,
                 lastname: findUser?.lastname,
                 email: findUser?.email,
+                mobile: findUser?.mobile,
                 token: generateToken(findUser?._id),    
             })
         }
