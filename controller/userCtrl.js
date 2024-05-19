@@ -19,4 +19,19 @@ const createUser = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { createUser };
+const loginUserCtrl = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    const findUser = await user.findOne({ email })
+    if (findUser) {
+        const isPasswordMatched = await findUser.isPasswordMatched(password);
+        if (isPasswordMatched) {
+            res.status(200).json({ msg: 'Login successfully' });
+        } else {
+            res.status(401).json({ msg: 'Invalid email or password' });
+        }
+    } else {
+        throw new Error('Invalid email or password');
+    }
+});
+
+module.exports = { createUser, loginUserCtrl };
