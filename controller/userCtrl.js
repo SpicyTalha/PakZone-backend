@@ -1,8 +1,9 @@
 const user = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const {generateToken} = require('../config/jwtToken');
-validateMongoDbId = require('../utils/validateMongoDbId');
-
+const validateMongoDbId = require('../utils/validateMongoDbId');
+const {generateRefreshToken} = require('../config/refreshToken');
+const jwt = require('jsonwebtoken');
 
 const createUser = asyncHandler(async (req, res) => {
     try {
@@ -27,6 +28,14 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
     if (findUser) {
         const isPasswordMatched = await findUser.isPasswordMatched(password);
         if (isPasswordMatched) {
+            const refreshToken = await generateRefreshToken(findUser?._id);
+            const updateUser = await user.findByIdAndUpdate(findUser?._id, {
+                refreshToken: refreshToken}, 
+                {new: true});
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,
+                maxAge: 3*60*60*1000
+            })
             res.status(200).json({
                 _id: findUser?._id,
                 firstname: findUser?.firstname,
@@ -40,6 +49,26 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
         throw new Error('Invalid email or password');
     }
 });
+
+//handle refresh token
+const handleRefreshToken = asyncHandler(async (req, res) =>{
+    const cookie = req.cookies;
+    if (!cookie.refreshToken) {
+        throw new Error("No refresh token found in cookies");
+    }
+    const refreshToken = cookie.refreshToken;
+    console.log(refreshToken);
+    const getUser = await user.findOne({refreshToken});
+    if (!getUser) throw new Error("No user found with this refresh token");
+    jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+        if (err || getUser.id !== decoded.id){
+                console.log(decoded)
+                throw new Error("There is something wrong with the refresh token");
+            }
+            const accessToken = generateToken(getUser?._id);
+            res.json(accessToken)
+        })
+})
 
 const getallUser = asyncHandler(async (req, res) => {
     try{
@@ -134,5 +163,6 @@ module.exports = { createUser,
     deleteaUser,
     updateaUser,
     blockUser,
-    unblockUser
+    unblockUser,
+    handleRefreshToken
 };
