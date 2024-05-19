@@ -9,6 +9,7 @@ const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const cookieParser = require('cookie-parser');
 const productRoute = require('./routes/productRoute');
 const morgan = require('morgan');
+const blogRoute = require('./routes/blogRoute');
 
 dbConnect();
 
@@ -19,6 +20,7 @@ app.use(cookieParser())
 
 app.use('/api/user', authRouter);
 app.use('/api/product', productRoute);
+app.use('/api/blog', blogRoute)
 
 app.use(notFound);
 app.use(errorHandler);
