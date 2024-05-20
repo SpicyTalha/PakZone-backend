@@ -1,4 +1,6 @@
 const user = require('../models/userModel');
+const Product = require('../models/productModel');
+const Cart = require('../models/cartModel');
 const asyncHandler = require('express-async-handler');
 const {generateToken} = require('../config/jwtToken');
 const validateMongoDbId = require('../utils/validateMongoDbId');
@@ -324,6 +326,80 @@ const getWishList = asyncHandler(async (req, res) => {
     }
 })
 
+const userCart = asyncHandler(async (req, res) => {
+    const { cart } = req.body;
+    const { _id } = req.user;
+    validateMongoDbId(_id);   
+    try {
+        let Products = [];
+        // Fetch the user document
+        const User = await user.findById(_id);
+        
+        // Check if the product is already in the cart
+        const alreadyExistCart = await Cart.findOne({ orderBy: User._id });
+        if (alreadyExistCart) {
+            alreadyExistCart.remove();
+        }
+        
+        // Loop through the items in the cart
+        for (let i = 0; i < cart.length; i++) {
+            const object = {};
+            object.product = cart[i]._id;
+            object.count = cart[i].count;
+            object.color = cart[i].color;
+            
+            // Find the product by ID and select only the price field
+            const getPrice = await Product.findById(cart[i]._id).select("price").exec();
+            
+            // If product found, add its price to the object
+            if (getPrice) {
+                object.price = getPrice.price;
+            } else {
+                // Handle case where product with given ID is not found
+                console.log(`Product with ID ${cart[i]._id} not found.`);
+                // You might want to decide what to do in this case
+            }
+            
+            Products.push(object);
+        }
+        let cartTotal = 0;
+        for (let i = 0; i < Products.length; i++){
+            cartTotal = cartTotal + Products[i].price * Products[i].count
+        }
+        let newCart = await new Cart({
+            products: Products,
+            cartTotal,
+            orderedBy: User._id
+        }).save();
+        res.json(newCart); // Send the products back in the response
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+const getUserCart = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+    try {
+        const UserCart = await Cart.findOne({ orderedBy: _id }).populate("products.product");
+        res.json(UserCart);
+    } catch (error) {
+        throw new Error(error);
+    }
+})
+
+const emptyCart = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+    try {
+        const UserCart = await Cart.findOneAndDelete({ orderedBy: _id });
+        res.json(UserCart);
+    } catch (error) {
+        throw new Error(error);
+    }
+})
+
+
 module.exports = { createUser,
     loginUserCtrl,
     getallUser,
@@ -339,5 +415,8 @@ module.exports = { createUser,
     resetPassword, 
     loginAdminCtrl,
     getWishList,
-    saveAddress
+    saveAddress,
+    userCart,
+    getUserCart,
+    emptyCart
 };
