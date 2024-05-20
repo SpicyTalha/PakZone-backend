@@ -146,6 +146,27 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res.sendStatus(204); //forbidden
 })
 
+//save user address
+const saveAddress = asyncHandler(async (req, res, next) => {
+    const {_id} = req.user;
+    validateMongoDbId(_id);
+    try{
+        const updateaUser = await user.findByIdAndUpdate(
+            _id, 
+            {
+            address: req?.body?.address,
+            },
+            {
+            new: true
+            }
+        );
+        res.json(updateaUser);
+    }catch(error){
+        throw new Error(error);
+    }
+})
+
+
 const getallUser = asyncHandler(async (req, res) => {
     try{
         const getUsers = await user.find({});
@@ -317,5 +338,6 @@ module.exports = { createUser,
     forgotPasswordToken,
     resetPassword, 
     loginAdminCtrl,
-    getWishList
+    getWishList,
+    saveAddress
 };
