@@ -27,7 +27,6 @@ const createUser = asyncHandler(async (req, res) => {
 const loginUserCtrl = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const findUser = await user.findOne({ email });
-
     if (!findUser) {
         res.status(401);
         throw new Error('Invalid email or password');
@@ -40,7 +39,7 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
         throw new Error('Invalid email or password');
     }
 
-    const refreshToken = await generateRefreshToken(findUser._id);
+    const refreshToken = await generateRefreshToken(findUser?._id);
     const updateUser = await user.findByIdAndUpdate(
         findUser._id,
         { refreshToken: refreshToken },
@@ -53,12 +52,53 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
     });
 
     res.status(200).json({
-        _id: findUser._id,
-        firstname: findUser.firstname,
-        lastname: findUser.lastname,
-        email: findUser.email,
-        mobile: findUser.mobile,
-        token: generateToken(findUser._id),
+        _id: findUser?._id,
+        firstname: findUser?.firstname,
+        lastname: findUser?.lastname,
+        email: findUser?.email,
+        mobile: findUser?.mobile,
+        token: generateToken(findUser?._id),
+    });
+});
+
+//admin login
+const loginAdminCtrl = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    const findAdmin = await user.findOne({ email });
+    if (findAdmin.role !== "admin") {
+        throw new Error ("You are not authorized to access this route");
+    }
+    if (!findAdmin) {
+        res.status(401);
+        throw new Error('Invalid email or password');
+    }
+
+    const isPasswordMatched = await findAdmin.isPasswordMatched(password);
+
+    if (!isPasswordMatched) {
+        res.status(401);
+        throw new Error('Invalid email or password');
+    }
+
+    const refreshToken = await generateRefreshToken(findAdmin?._id);
+    const updateAdmin = await user.findByIdAndUpdate(
+        findAdmin._id,
+        { refreshToken: refreshToken },
+        { new: true }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 3 * 60 * 60 * 1000, // 3 hours
+    });
+
+    res.status(200).json({
+        _id: findAdmin?._id,
+        firstname: findAdmin?.firstname,
+        lastname: findAdmin?.lastname,
+        email: findAdmin?.email,
+        mobile: findAdmin?.mobile,
+        token: generateToken(findAdmin?._id),
     });
 });
 
@@ -253,6 +293,16 @@ const resetPassword = asyncHandler(async (req, res) => {
     res.json(User)
 })
 
+const getWishList = asyncHandler(async (req, res) => {
+    const {_id} = req.user
+    try{
+        const findUser = await user.findById(_id).populate('wishlist')
+        res.json(findUser)
+    }catch(error){
+        throw new Error(error);
+    }
+})
+
 module.exports = { createUser,
     loginUserCtrl,
     getallUser,
@@ -265,5 +315,7 @@ module.exports = { createUser,
     logoutUser,
     updatePassword,
     forgotPasswordToken,
-    resetPassword
+    resetPassword, 
+    loginAdminCtrl,
+    getWishList
 };
